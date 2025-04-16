@@ -1,13 +1,14 @@
-from models.conection import get_connection
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routes.usuario_router import router as usuario_router
 
-def teste():
-    try:
-        conn = get_connection()
-        if conn.is_connected():
-            print("banco conectado")
-        conn.close()
-    except Exception as e:
-        print("erro ao conectar ", e)
+app = FastAPI()
 
-if __name__ == "__main__":
-    teste()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(usuario_router)
