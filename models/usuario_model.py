@@ -123,3 +123,35 @@ def model_inativar_usuario(usuario_id, status):
     finally:
         cursor.close()
         conn.close()
+        
+def model_obter_usuario_por_email(email):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
+        return cursor.fetchone()
+
+    except Exception as e:
+        print(f"Erro ao buscar usuário: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        conn.close()
+        
+def model_obter_usuario_por_id(usuario_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios WHERE usuario_id = %s", (usuario_id,))
+        return cursor.fetchone()
+
+    except Exception as e:
+        print(f"Erro ao buscar usuário: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        conn.close()
