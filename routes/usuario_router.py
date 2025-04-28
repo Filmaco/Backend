@@ -15,13 +15,13 @@ import os
 import firebase_admin
 from firebase_admin import credentials
 
-# Inicializando o Firebase Admin
-service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serviceAccountKey.json")
-cred = credentials.Certificate(service_account_path)
-firebase_admin.initialize_app(cred)
+# # Inicializando o Firebase Admin
+# service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serviceAccountKey.json")
+# cred = credentials.Certificate(service_account_path)
+# firebase_admin.initialize_app(cred)
 
 SECRET_KEY = "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"
-FIREBASE_API_KEY = "AIzaSyBX-lCLKQ3BSzZEhkDqZqpGzwg6nFbKU_0"
+# FIREBASE_API_KEY = "AIzaSyBX-lCLKQ3BSzZEhkDqZqpGzwg6nFbKU_0"
 
 router = APIRouter()
 
@@ -108,25 +108,25 @@ async def obter_usuario_logado(usuario_id: int = Depends(verificar_token)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# Resetar Senha
-@router.post("/resetar/senha")
-async def resetar_senha(request: ResetSenhaRequest):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_API_KEY}"
-    payload = {
-        "requestType": "PASSWORD_RESET",
-        "email": request.email
-    }
+# # Resetar Senha
+# @router.post("/resetar/senha")
+# async def resetar_senha(request: ResetSenhaRequest):
+#     url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_API_KEY}"
+#     payload = {
+#         "requestType": "PASSWORD_RESET",
+#         "email": request.email
+#     }
 
-    response = requests.post(url, json=payload)
+#     response = requests.post(url, json=payload)
 
-    if response.status_code != 200:
-        try:
-            error_detail = response.json()
-            error_message = error_detail.get("error", {}).get("message", "Erro desconhecido")
-        except Exception as e:
-            error_message = f"Erro ao enviar email: {e}"
+#     if response.status_code != 200:
+#         try:
+#             error_detail = response.json()
+#             error_message = error_detail.get("error", {}).get("message", "Erro desconhecido")
+#         except Exception as e:
+#             error_message = f"Erro ao enviar email: {e}"
 
-        print(f"Erro ao tentar resetar a senha: {error_message}")
-        raise HTTPException(status_code=400, detail=error_message)
+#         print(f"Erro ao tentar resetar a senha: {error_message}")
+#         raise HTTPException(status_code=400, detail=error_message)
 
-    return {"message": "Email de redefinição enviado com sucesso"}
+#     return {"message": "Email de redefinição enviado com sucesso"}
