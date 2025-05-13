@@ -1,4 +1,26 @@
 from models.conection import get_connection
+from pydantic import BaseModel
+from typing import Optional
+from fastapi import File, UploadFile
+from typing import List
+
+class VideoCreate(BaseModel):
+    usuario_id: int
+    nome: str
+    genero: str
+    duracao: str
+    tipo: str
+    link: str
+    descricao: Optional[str] = None
+    tags: Optional[str] = None
+    imagem: Optional[UploadFile] = File(None)  
+
+    class Config:
+        orm_mode = True
+
+class TagCreate(BaseModel):
+    video_id: int
+    nome_tag: str
 
 def model_adicionar_video(
     usuario_id,
@@ -8,7 +30,7 @@ def model_adicionar_video(
     tipo,
     link,
     descricao=None,
-    tags=None
+    imagem=None
 ):
     try:
         conn = get_connection()
@@ -16,20 +38,18 @@ def model_adicionar_video(
 
         sql = """
         INSERT INTO videos (
-            usuario_id, nome, descricao, genero, tags,
-            duracao, tipo, link, status
+            usuario_id, nome, descricao, genero, duracao, tipo, link, imagem, status
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         valores = (
-            usuario_id, nome, descricao, genero, tags,
-            duracao, tipo, link, 'ativo' 
+            usuario_id, nome, descricao, genero, duracao, tipo, link, imagem, 'ativo'
         )
 
         cursor.execute(sql, valores)
         conn.commit()
-        return cursor.lastrowid
+        return cursor.lastrowid 
 
     except Exception as e:
         print("Erro ao adicionar vídeo:", e)
@@ -39,13 +59,11 @@ def model_adicionar_video(
         cursor.close()
         conn.close()
 
-
 def model_atualizar_video(
     video_id,
     nome=None,
     descricao=None,
     genero=None,
-    tags=None,
     duracao=None,
     tipo=None,
     link=None
@@ -66,9 +84,6 @@ def model_atualizar_video(
         if genero:
             campos.append("genero = %s")
             valores.append(genero)
-        if tags:
-            campos.append("tags = %s")
-            valores.append(tags)
         if duracao:
             campos.append("duracao = %s")
             valores.append(duracao)
@@ -108,9 +123,7 @@ def model_inativar_video(video_id):
         cursor = conn.cursor()
 
         sql = """
-            UPDATE videos
-            SET ativo = 0, atualizado_em = CURRENT_TIMESTAMP
-            WHERE video_id = %s
+            "UPDATE videos SET status = %s WHERE video_id = %s"
         """
         cursor.execute(sql, (video_id,))
         conn.commit()
@@ -129,7 +142,24 @@ def model_obter_video_por_id(video_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM videos WHERE video_id = %s", (video_id,))
+        cursor.execute("""
+                       SELECT 
+                            v.*, 
+                            u.usuario_id, 
+                            u.nome_completo AS nome_usuario, 
+                            GROUP_CONCAT(t.nome_tag) AS tags
+                        FROM 
+                            videos v
+                        LEFT JOIN 
+                            tags_videos t ON v.video_id = t.video_id
+                        JOIN 
+                            usuarios u ON v.usuario_id = u.usuario_id
+                        WHERE 
+                            v.status = 'ativo' 
+                            AND v.video_id = %s -- Aqui você coloca o ID do vídeo
+                        GROUP BY 
+                            v.video_id, u.usuario_id 
+                       """, (video_id,))
         return cursor.fetchone()
 
     except Exception as e:
@@ -139,7 +169,6 @@ def model_obter_video_por_id(video_id):
     finally:
         cursor.close()
         conn.close()
-
 
 def model_listar_videos_por_usuario(usuario_id):
     try:
@@ -175,7 +204,6 @@ def model_incrementar_visualizacoes(video_id):
         cursor.close()
         conn.close()
 
-
 def model_listar_videos_por_tipo(tipo):
     try:
         conn = get_connection()
@@ -192,3 +220,120 @@ def model_listar_videos_por_tipo(tipo):
     finally:
         cursor.close()
         conn.close()
+        
+def model_listar_videos_por_genero(genero):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        sql = """
+                SELECT 
+                    v.*, 
+                    u.usuario_id,
+                    u.nome_completo AS nome_usuario,
+                    GROUP_CONCAT(t.nome_tag) AS tags
+                FROM videos v
+                JOIN usuarios u ON v.usuario_id = u.usuario_id
+                LEFT JOIN tags_videos t ON v.video_id = t.video_id
+                WHERE v.genero = %s AND v.status = 'ativo'
+                GROUP BY v.video_id
+            """
+        cursor.execute(sql, (genero,))
+        return cursor.fetchall()
+
+    except Exception as e:
+        print(f"Erro ao listar vídeos por gênero: {e}")
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
+             
+def model_adicionar_tags(video_id: int, tags: List[str]):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        sql = "INSERT INTO tags_videos (video_id, nome_tag) VALUES (%s, %s)"
+        valores = [(video_id, tag.strip()) for tag in tags if tag.strip()]
+
+        cursor.executemany(sql, valores)
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print("Erro ao adicionar tags:", e)
+        return False
+
+    finally:
+        cursor.close()
+        conn.close()
+        
+def model_listar_videos_por_tag(nome_tag: Optional[str]):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        if nome_tag and nome_tag.lower() != 'null':
+            query = """
+                SELECT 
+                    v.*, 
+                    u.usuario_id,
+                    u.nome_completo AS nome_usuario,
+                    GROUP_CONCAT(t.nome_tag) AS tags
+                FROM videos v
+                JOIN tags_videos t ON v.video_id = t.video_id
+                JOIN usuarios u ON v.usuario_id = u.usuario_id
+                WHERE t.nome_tag = %s AND v.status = 'ativo'
+                GROUP BY v.video_id
+            """
+            cursor.execute(query, (nome_tag,))
+        else:
+            query = """
+                  SELECT 
+                    v.*, 
+                    u.usuario_id,
+                    u.nome_completo AS nome_usuario,
+                    GROUP_CONCAT(t.nome_tag) AS tags
+                FROM videos v
+                LEFT JOIN tags_videos t ON v.video_id = t.video_id
+                JOIN usuarios u ON v.usuario_id = u.usuario_id
+                WHERE v.status = 'ativo'
+                GROUP BY v.video_id
+            """
+            cursor.execute(query)
+
+        resultados = cursor.fetchall()
+
+        for video in resultados:
+            if video.get("tags"):
+                video["tags"] = [tag.strip() for tag in video["tags"].split(",")]
+            else:
+                video["tags"] = []
+        return resultados
+
+    except Exception as e:
+        print(f"Erro ao buscar vídeos pela tag '{nome_tag}': {e}")
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+        

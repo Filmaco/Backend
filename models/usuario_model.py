@@ -1,5 +1,9 @@
 from models.conection import get_connection
+import logging
 
+logger = logging.getLogger(__name__)
+
+# adicionar usuario
 def model_adicionar_usuario(
     nome_completo,
     username,
@@ -10,7 +14,8 @@ def model_adicionar_usuario(
     genero=None,
     biografia=None,
     tipo='comum',
-    status='ativo'
+    status='ativo',
+    
 ):
     try:
         conn = get_connection()
@@ -39,7 +44,8 @@ def model_adicionar_usuario(
     finally:
         cursor.close()
         conn.close()
-        
+  
+# editar usuario     
 def model_editar_usuario(
     usuario_id, nome_completo=None, username=None, email=None,
     senha=None, data_nascimento=None, foto_perfil=None,
@@ -104,6 +110,26 @@ def model_editar_usuario(
         cursor.close()
         conn.close()
 
+# listar usuarios
+def model_listar_usuarios():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios")
+        usuarios = cursor.fetchall()
+
+        return usuarios
+
+    except Exception as e:
+        print("Erro ao listar usuários:", e)
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
+
+# inativar usuario
 def model_inativar_usuario(usuario_id, status):
     try:
         conn = get_connection()
@@ -123,7 +149,8 @@ def model_inativar_usuario(usuario_id, status):
     finally:
         cursor.close()
         conn.close()
-        
+  
+# pegar uusario por email      
 def model_obter_usuario_por_email(email):
     try:
         conn = get_connection()
@@ -139,9 +166,11 @@ def model_obter_usuario_por_email(email):
     finally:
         cursor.close()
         conn.close()
-        
+ 
+# pegar usuairo por id       
 def model_obter_usuario_por_id(usuario_id):
     try:
+        logger.info(f"Conectando ao banco para buscar o usuário com ID {usuario_id}")
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
@@ -154,4 +183,22 @@ def model_obter_usuario_por_id(usuario_id):
 
     finally:
         cursor.close()
-        conn.close()
+        conn.close()        
+
+ 
+ # pegar usuario por nome       
+def model_obter_usuario_por_name(nome_completo):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios WHERE nome_completo = %s", (nome_completo,))
+        return cursor.fetchone()
+
+    except Exception as e:
+        print(f"Erro ao buscar usuário: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        conn.close()        

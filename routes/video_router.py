@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+# routers/video_router.py
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from controllers.video_controller import (
     controller_criar_video,
     controller_obter_video_por_id,
@@ -7,11 +7,15 @@ from controllers.video_controller import (
     controller_listar_videos_por_usuario,
     controller_incrementar_visualizacoes,
     controller_listar_videos,
-    controller_listar_videos_por_tipo
+    controller_listar_videos_por_tipo,
+    controller_criar_tags,
+    controller_listar_videos_por_tag,
+    controller_listar_tags,
+    controller_listar_videos_por_genero,
+    controller_inativar_video,
 )
 from pydantic import BaseModel
 from typing import Optional
-import jwt
 
 
 router = APIRouter(prefix="/videos", tags=["Videos"])
@@ -24,29 +28,82 @@ class VideoCreate(BaseModel):
     tipo: str
     link: str
     descricao: Optional[str] = None
-    tags: Optional[str] = None
+    imagem: Optional[UploadFile] = File(None)
+
+    class Config:
+        orm_mode = True
 
 class VideoUpdate(BaseModel):
     nome: Optional[str] = None
     descricao: Optional[str] = None
     genero: Optional[str] = None
-    tags: Optional[str] = None
     duracao: Optional[str] = None
     tipo: Optional[str] = None
     link: Optional[str] = None
 
+# funcao para alterar link do youtue pra poder usar o player (iframe)
+def transformar_youtube_para_embed(link: str) -> str:
+    import re
+    match = re.search(r"(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})", link)
+    if match:
+        video_id = match.group(1)
+        return f"https://www.youtube.com/embed/{video_id}"
+    return link
 
+
+# ------  CRUD VIDEO --------
+
+#criar video
 @router.post("/add", status_code=status.HTTP_201_CREATED)
-async def criar_video(video: VideoCreate):
+async def criar_video(
+        usuario_id: int = Form(...),
+        nome: str = Form(...),
+        genero: str = Form(...),
+        duracao: str = Form(...),
+        tipo: str = Form(...),
+        link: str = Form(...),
+        descricao: Optional[str] = Form(None),
+        tags: Optional[str] = Form(None),
+        imagem: Optional[UploadFile] = File(None)
+    ):
     try:
-        response = controller_criar_video(video.dict())
+        link = transformar_youtube_para_embed(link)
+        
+        imagem_nome = None
+        if imagem:
+            import os
+            os.makedirs("uploads", exist_ok=True)
+
+            nome_arquivo = imagem.filename
+            caminho = f"uploads/{nome_arquivo}"
+
+            with open(caminho, "wb") as f:
+                f.write(await imagem.read())
+
+            imagem_nome = nome_arquivo
+
+        dados = {
+            "usuario_id": usuario_id,
+            "nome": nome,
+            "genero": genero,
+            "duracao": duracao,
+            "tipo": tipo,
+            "link": link,
+            "descricao": descricao,
+            "imagem": imagem_nome,
+            "tags": tags
+        }
+
+        response = controller_criar_video(dados)
+
         if response["status"] != 200:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
         return response
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
+# editar video
 @router.put("/editar/{video_id}", status_code=status.HTTP_200_OK)
 async def atualizar_video(video_id: int, video: VideoUpdate):
     try:
@@ -58,6 +115,85 @@ async def atualizar_video(video_id: int, video: VideoUpdate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+# ----- VISUALIZACAO -----
+
+#visualizacao
+@router.post("/{video_id}/visualizacao", status_code=status.HTTP_200_OK)
+async def incrementar_visualizacao(video_id: int):
+    try:
+        response = controller_incrementar_visualizacoes(video_id)
+        if response["status"] != 200:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+# ------- LISTAR --------
+
+# listar todos os videos
+@router.get("/", status_code=status.HTTP_200_OK)
+async def listar_videos():
+    try:
+        response = controller_listar_videos()
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+# listar tags
+@router.get("/tags", status_code=status.HTTP_200_OK)
+async def listar_tags():
+    try:
+        response = controller_listar_tags()
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+# ------ LISTAR POR --------
+
+# listar videos por usuario
+@router.get("/usuario/{usuario_id}", status_code=status.HTTP_200_OK)
+async def listar_videos_usuario(usuario_id: int):
+    try:
+        response = controller_listar_videos_por_usuario(usuario_id)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+# listar videos por tipo
+@router.get("/tipo/{tipo}", status_code=status.HTTP_200_OK)
+async def listar_videos_tipo(tipo: str):
+    try:
+        response = controller_listar_videos_por_tipo(tipo)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+#listar video por tag
+@router.get("/tag/{nome_tag}", status_code=status.HTTP_200_OK)
+async def listar_videos_por_tag(nome_tag: str):
+    try:
+        response = controller_listar_videos_por_tag(nome_tag)
+        if response["status"] != 200:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=response["mensagem"])
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+#listar video por genero
+@router.get("/genero/{genero}", status_code=status.HTTP_200_OK)
+async def listar_videos_genero(genero: str):
+    try:
+        response = controller_listar_videos_por_genero(genero)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+ 
+ 
+# ------ VIDEO POR ID ------
+    
+# pegar video por id
 @router.get("/{video_id}", status_code=status.HTTP_200_OK)
 async def obter_video(video_id: int):
     try:
@@ -69,39 +205,25 @@ async def obter_video(video_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/tipo/{tipo}", status_code=status.HTTP_200_OK)
-async def listar_videos_tipo(tipo: str):
+# ----- INATIVAR -----
+
+# inativar
+@router.put("/inativar/{video_id}", status_code=status.HTTP_200_OK)
+async def inativar_video(video_id: int):
     try:
-        response = controller_listar_videos_por_tipo(tipo)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-
-@router.get("/", status_code=status.HTTP_200_OK)
-async def listar_videos():
-    try:
-        response = controller_listar_videos()
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-
-@router.post("/{video_id}/visualizacao", status_code=status.HTTP_200_OK)
-async def incrementar_visualizacao(video_id: int):
-    try:
-        response = controller_incrementar_visualizacoes(video_id)
+        response = controller_inativar_video(video_id)
         if response["status"] != 200:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
     
     
-@router.get("/usuario/{usuario_id}", status_code=status.HTTP_200_OK)
-async def listar_videos_usuario(usuario_id: int):
-    try:
-        response = controller_listar_videos_por_usuario(usuario_id)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+    
+    
+    
+    
+    

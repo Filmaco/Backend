@@ -1,7 +1,11 @@
 from models.usuario_model import (
     model_adicionar_usuario,
     model_editar_usuario,
-    model_inativar_usuario
+    model_inativar_usuario,
+    model_obter_usuario_por_name,
+    model_listar_usuarios,
+    model_obter_usuario_por_email,
+    model_obter_usuario_por_id,
     )
 from models.utils import gerar_hash  
 from controllers.validacoes import validar_senha
@@ -10,11 +14,20 @@ import jwt
 from models.utils import verificar_hash
 import logging
 from models.utils import validar_campos_obrigatorios
-
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-SECRET_KEY = "minha_chave_secreta"
+SECRET_KEY = "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"
+
+# criar token
+def criar_token(usuario_id: int):
+    payload = {
+        "sub": usuario_id,
+        "exp": datetime.utcnow() + timedelta(hours=2)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return token
 
 # criar usuario
 def controller_criar_usuario(dados):
@@ -54,6 +67,8 @@ def controller_criar_usuario(dados):
         return {"status": 500, "mensagem": "Erro ao criar usuário."}
  
  # atualizar usuario   
+
+# atualizar usuario
 def controller_atualizar_usuario(usuario_id, dados):
     senha = dados.get("senha")
     senha = gerar_hash(senha) if senha else None
@@ -101,34 +116,31 @@ def controller_listar_usuarios():
         cursor.execute("SELECT * FROM usuarios")
         usuarios = cursor.fetchall()
 
-        return usuarios
+        logger.info("Usuários listados com sucesso.")
+        return {"status": 200, "mensagem": "Usuários listados com sucesso", "usuarios": usuarios}
 
     except Exception as e:
-        print("Erro ao listar usuários:", e)
-        return []
+        logger.error(f"Erro ao listar usuários: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao listar usuários"}
 
     finally:
         cursor.close()
         conn.close()
-  
+
 # pegar usuario por email
-def model_obter_usuario_por_email(email):
+def controller_obter_usuario_por_email(email):
     try:
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
-        usuario = cursor.fetchone()
-        return usuario
+        usuario = model_obter_usuario_por_email(email)
+        if usuario:
+            return {"status": 200, "mensagem": "Usuário encontrado com sucesso", "usuario": usuario}
+        else:
+            logger.warning(f"Usuário com email '{email}' não encontrado.")
+            return {"status": 404, "mensagem": "Usuário não encontrado"}
 
     except Exception as e:
-        print(f"Erro ao buscar usuário: {e}")
-        return None
+        logger.error(f"Erro ao buscar usuário por email '{email}': {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar usuário"}
 
-    finally:
-        cursor.close()
-        conn.close()
- 
 # realziar login por email
 def controller_login(email, senha):
     usuario = model_obter_usuario_por_email(email)
@@ -142,5 +154,33 @@ def controller_login(email, senha):
         return None
 
     token = jwt.encode({"usuario_id": usuario['usuario_id']}, SECRET_KEY, algorithm="HS256")
-    return token     
+    id = usuario['usuario_id']
+    
+    return {"token": token, "id": id}  
 
+# pegar usuaruo por nome
+def controller_obter_usuario_por_name(nome_completo):
+    try:
+        usuario = model_obter_usuario_por_name(nome_completo)
+        if usuario:
+            return {"status": 200, "mensagem": "Usuário encontrado com sucesso", "usuario": usuario}
+        else:
+            logger.warning(f"Usuário '{nome_completo}' não encontrado.")
+            return {"status": 404, "mensagem": "Usuário não encontrado"}
+    except Exception as e:
+        logger.error(f"Erro ao buscar usuário '{nome_completo}': {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar usuário"}
+
+# pegar usuario por id
+def controller_obter_usuario_por_id(usuario_id: int):
+    try:
+        usuario = model_obter_usuario_por_id(usuario_id)
+        
+        if usuario:
+            return {"status": 200, "mensagem": "Usuário encontrado com sucesso", "usuario": usuario}
+        else:
+            logger.warning(f"Usuário '{usuario_id}' não encontrado.")
+            return {"status": 404, "mensagem": "Usuário não encontrado"}
+    except Exception as e:
+        logger.error(f"Erro ao buscar usuário '{usuario_id}': {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar usuário"}

@@ -40,3 +40,5 @@ def validar_campos_obrigatorios(dados, campos_obrigatorios):
         "status": 200,
         "mensagem": "Todos os campos obrigatórios estão presentes."
     }
+    
+    

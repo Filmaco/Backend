@@ -5,7 +5,9 @@ from controllers.usuario_controller import (
     controller_listar_usuarios,
     controller_atualizar_usuario,
     controller_inativar_usuario,
-    controller_login
+    controller_login,
+    controller_obter_usuario_por_name,
+    controller_obter_usuario_por_id,
 )
 from models.usuario_model import model_obter_usuario_por_id
 import jwt
@@ -14,14 +16,11 @@ import requests
 import os
 import firebase_admin
 from firebase_admin import credentials
+from fastapi import UploadFile, File, Form
+from typing import Optional
 
-# # Inicializando o Firebase Admin
-# service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serviceAccountKey.json")
-# cred = credentials.Certificate(service_account_path)
-# firebase_admin.initialize_app(cred)
 
 SECRET_KEY = "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"
-# FIREBASE_API_KEY = "AIzaSyBX-lCLKQ3BSzZEhkDqZqpGzwg6nFbKU_0"
 
 router = APIRouter()
 
@@ -30,25 +29,102 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="usuarios/login")
 class ResetSenhaRequest(BaseModel):
     email: EmailStr
 
-# Adicionar Usuario
+
+# ADD
 @router.post("/usuarios/add", status_code=status.HTTP_201_CREATED)
-async def criar_usuario(data: dict):
+async def criar_usuario(
+    nome_completo: str = Form(...),
+    email: str = Form(...),
+    senha: str = Form(...),
+    tipo: str = Form(...),
+    biografia: str = Form(...),
+    genero: str = Form(...),
+    username: str = Form(...),
+    data_nascimento: str = Form(...),
+
+    foto_perfil: Optional[UploadFile] = File(None)
+):
     try:
-        response = controller_criar_usuario(data)
+        foto_nome = None
+        if foto_perfil:
+            import os
+            os.makedirs("uploads", exist_ok=True)
+
+            nome_arquivo = foto_perfil.filename
+            caminho = f"uploads/{nome_arquivo}"
+
+            with open(caminho, "wb") as f:
+                f.write(await foto_perfil.read())
+
+            foto_nome = nome_arquivo
+
+        dados = {
+            "nome_completo": nome_completo,
+            "email": email,
+            "senha": senha,
+            "foto_perfil": foto_nome,
+            "biografia": biografia,
+            "tipo": tipo,
+            "genero": genero,
+            "username": username,
+            "data_nascimento": data_nascimento,
+        }
+
+        response = controller_criar_usuario(dados)
         return response
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# Editar Usuario
-@router.put("/usuarios/editar/{usuario_id}", status_code=status.HTTP_200_OK)
-async def atualizar_usuario(usuario_id: int, data: dict):
+# EDITAR
+@router.put("/usuarios/editar/{usuario_id}")
+async def atualizar_usuario(
+    usuario_id: int,
+    nome_completo: str = Form(None),
+    email: str = Form(None),
+    senha: str = Form(None),
+    username: str = Form(None),
+    data_nascimento: str = Form(None),
+    genero: str = Form(None),
+    biografia: str = Form(None),
+    foto_perfil: UploadFile = File(None)
+):
     try:
-        response = controller_atualizar_usuario(usuario_id, data)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        foto_nome = None
+        if foto_perfil:
+            import os
+            os.makedirs("uploads", exist_ok=True)
 
-# Inativar Usuario
+            nome_arquivo = foto_perfil.filename
+            caminho = f"uploads/{nome_arquivo}"
+
+            with open(caminho, "wb") as f:
+                f.write(await foto_perfil.read())
+
+            foto_nome = nome_arquivo
+
+        dados = {}
+
+        if nome_completo is not None: dados["nome_completo"] = nome_completo
+        if email is not None: dados["email"] = email
+        if senha is not None: dados["senha"] = senha
+        if username is not None: dados["username"] = username
+        if data_nascimento is not None: dados["data_nascimento"] = data_nascimento
+        if genero is not None: dados["genero"] = genero
+        if biografia is not None: dados["biografia"] = biografia
+        if foto_nome is not None: dados["foto_perfil"] = foto_nome
+
+        if not dados:
+            raise HTTPException(status_code=400, detail="Nenhum dado foi enviado para atualizar.")
+
+        response = controller_atualizar_usuario(usuario_id, dados)
+        return response
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# INATIVAR
 @router.put("/usuarios/inativar/{usuario_id}", status_code=status.HTTP_200_OK)
 async def alterar_status_usuario(usuario_id: int, data: dict):
     status_usuario = data.get("status", "inativo")
@@ -58,7 +134,7 @@ async def alterar_status_usuario(usuario_id: int, data: dict):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# Listar Usuarios
+# LISTARs
 @router.get("/usuarios", status_code=status.HTTP_200_OK)
 async def obter_usuarios():
     try:
@@ -67,11 +143,12 @@ async def obter_usuarios():
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# Login
+# LOGIN
 @router.post("/usuarios/login", status_code=status.HTTP_200_OK)
 async def login(data: dict):
     email = data.get("email")
     senha = data.get("senha")
+    id = data.get("id")  # ID agora é passado pelo corpo da requisição
 
     if not email or not senha:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email e senha são obrigatórios")
@@ -79,34 +156,73 @@ async def login(data: dict):
     try:
         token = controller_login(email, senha)
         if token:
-            return {"mensagem": "Login realizado com sucesso", "token": token}
+            return {"mensagem": "Login realizado com sucesso", "token": token, "id": id}
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-# Verifica o token de login
+    
+    
+# VERIFICA TOKEN
 def verificar_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        usuario_id = payload.get("usuario_id")
+        usuario_id = payload.get("sub")  
         if usuario_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
         return usuario_id
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
 
-# Perfil do usuário
-@router.get("/perfil", status_code=status.HTTP_200_OK)
-async def obter_usuario_logado(usuario_id: int = Depends(verificar_token)):
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        usuario = model_obter_usuario_por_id(usuario_id)
-        if usuario:
-            return {"usuario": usuario}
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        usuario_id = payload.get("usuario_id")
+        if usuario_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return {"usuario_id": usuario_id}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail=f"Token inválido: {token}")
+
+
+# PERFIL
+@router.get("/perfil")
+async def obter_perfil(usuario=Depends(get_current_user)):
+    usuario_id = usuario["usuario_id"]
+    
+    dados = model_obter_usuario_por_id(usuario_id)
+    if not dados:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    return {"usuario": dados}
+
+
+# pegarusuario por nome
+@router.get("/usuarios/{nome_completo}")
+async def obter_usuario_por_nome(nome_completo: str):
+    try:
+        dados = controller_obter_usuario_por_name(nome_completo)
+        if not dados:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return {"usuario": dados}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# pegar usuairo por nome
+@router.get("/usuarios/{usuario_id}")
+async def obter_usuario_por_id(usuario_id: int):
+    resultado = controller_obter_usuario_por_id(usuario_id)
+    
+    if resultado["status"] == 200:
+        return {"usuario": resultado["usuario"]}
+    elif resultado["status"] == 404:
+        raise HTTPException(status_code=404, detail=resultado["mensagem"])
+    else:
+        raise HTTPException(status_code=500, detail=resultado["mensagem"])
 
 # # Resetar Senha
 # @router.post("/resetar/senha")
@@ -130,3 +246,5 @@ async def obter_usuario_logado(usuario_id: int = Depends(verificar_token)):
 #         raise HTTPException(status_code=400, detail=error_message)
 
 #     return {"message": "Email de redefinição enviado com sucesso"}
+
+
