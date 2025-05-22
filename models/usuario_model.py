@@ -169,21 +169,29 @@ def model_obter_usuario_por_email(email):
  
 # pegar usuairo por id       
 def model_obter_usuario_por_id(usuario_id):
+    conn = None
+    cursor = None
     try:
-        logger.info(f"Conectando ao banco para buscar o usuário com ID {usuario_id}")
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        print(f"Buscando usuário ID: {usuario_id}")  
         cursor.execute("SELECT * FROM usuarios WHERE usuario_id = %s", (usuario_id,))
-        return cursor.fetchone()
+        resultado = cursor.fetchone()
+        print(f"Resultado da busca: {resultado}")  
+        return resultado
 
     except Exception as e:
         print(f"Erro ao buscar usuário: {e}")
         return None
 
     finally:
-        cursor.close()
-        conn.close()        
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+      
 
  
  # pegar usuario por nome       

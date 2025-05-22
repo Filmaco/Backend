@@ -10,6 +10,7 @@ from models.video_model import (
     model_listar_videos_por_tag,
     model_listar_videos_por_genero,
     model_inativar_video,
+    model_remover_tags
 )
 import logging
 from models.utils import validar_campos_obrigatorios
@@ -17,10 +18,12 @@ from models.conection import get_connection
 import os
 import shutil
 from fastapi import File, UploadFile
+from typing import Optional, List, Union
+
 
 logger = logging.getLogger(__name__)
 
-# ------------- CRIA A ATULIZA --------------
+# ------------- CRIA A ATULIZA VIDEO--------------
 
 # criar vidoe
 def controller_criar_video(dados: dict):
@@ -56,31 +59,42 @@ def controller_criar_video(dados: dict):
 
     return {"status": 200, "mensagem": "Vídeo criado com sucesso", "id": video_id}
 
-# atualizar vidoe
-def controller_atualizar_video(video_id, dados):
-    try:
-        sucesso = model_atualizar_video(
-            video_id=video_id,
-            nome=dados.get("nome"),
-            descricao=dados.get("descricao"),
-            genero=dados.get("genero"),
-            tags=dados.get("tags"),
-            duracao=dados.get("duracao"),
-            tipo=dados.get("tipo"),
-            link=dados.get("link"),
-            imagem=dados.get("imagem")
-        )
-        
-        if sucesso:
-            logger.info(f"Vídeo {video_id} atualizado com sucesso.")
-            return {"status": 200, "mensagem": "Vídeo atualizado com sucesso"}
-        else:
-            logger.error(f"Erro ao atualizar vídeo {video_id}.")
-            return {"status": 400, "mensagem": "Nenhum dado válido para atualização"}
-            
-    except Exception as e:
-        logger.error(f"Erro ao atualizar vídeo {video_id}: {str(e)}")
-        return {"status": 500, "mensagem": "Erro ao atualizar vídeo"}
+# atualizar video
+def controller_atualizar_video(video_id: int, dados: dict):
+
+    tipos_validos = [
+        'curta-metragem','longa-metragem','documentário','clipe musical','vlog','anime','serie',
+        'gameplay','tutorial','review','reacao','podcast','entrevista','comedia','noticia',
+        'educacional','ao vivo','cobertura de evento','animacao','experiencia social','unboxing',
+        'viagem','lifestyle','motivacional','parodia'
+    ]
+    
+    if dados.get("tipo") and dados["tipo"] not in tipos_validos:
+        return {"status": 400, "mensagem": "Tipo de vídeo inválido"}
+
+    video_atualizado = model_atualizar_video(
+        video_id,
+        nome=dados.get("nome"),
+        descricao=dados.get("descricao"),
+        genero=dados.get("genero"),
+        duracao=dados.get("duracao"),
+        tipo=dados.get("tipo"),
+        link=dados.get("link"),
+        imagem=dados.get("imagem")
+    )
+
+    if not video_atualizado:
+        return {"status": 500, "mensagem": "Erro ao atualizar vídeo no banco de dados"}
+
+    tags = dados.get("tags")
+    if tags and not isinstance(tags, list):
+        tags = [tags]  
+
+    controller_criar_tags(video_id, tags)
+
+    return {"status": 200, "mensagem": "Vídeo atualizado com sucesso", "id": video_id}
+
+
 
 # pegar video por id
 def controller_obter_video_por_id(video_id):
@@ -108,14 +122,21 @@ def controller_incrementar_visualizacoes(video_id):
         logger.error(f"Erro ao incrementar visualizações: {str(e)}")
         return {"status": 500, "mensagem": "Erro ao incrementar visualizações"}
 
+
+# --------------- TAGS ----------------
+
 # cria as tags
 def controller_criar_tags(video_id: int, tags_str: str):
     try:
+        video = model_obter_video_por_id(video_id)
+        if not video:
+            return {"status": 400, "mensagem": "Vídeo não encontrado"}
+
         if not tags_str:
             return {"status": 400, "mensagem": "Nenhuma tag fornecida"}
 
         tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
-        
+
         if not tags:
             return {"status": 400, "mensagem": "Tags inválidas"}
 
@@ -129,10 +150,25 @@ def controller_criar_tags(video_id: int, tags_str: str):
     except Exception as e:
         logger.error(f"Erro ao criar tags para o vídeo {video_id}: {str(e)}")
         return {"status": 500, "mensagem": "Erro interno ao adicionar tags"}
- 
+
  
  
  # INATIVA VIDEO
+
+
+# atualizar tags ( ----  com defeito -----)
+def controller_atualizar_tags(video_id: int, tags: Optional[Union[str, List[str]]]):
+    if not tags:
+        return
+    
+    if isinstance(tags, str):
+        tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+    
+    if not isinstance(tags, list):
+        return
+
+    for tag in tags:
+        model_adicionar_tags(video_id, tag)
 
 
 # ------ INATIVA VIDEO------

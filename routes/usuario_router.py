@@ -1,5 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+import jwt
+from pydantic import BaseModel, EmailStr
+import requests
+import os
+import firebase_admin
+from firebase_admin import credentials
+from fastapi import UploadFile, File, Form
+from typing import Optional
 from controllers.usuario_controller import (
     controller_criar_usuario,
     controller_listar_usuarios,
@@ -10,14 +18,7 @@ from controllers.usuario_controller import (
     controller_obter_usuario_por_id,
 )
 from models.usuario_model import model_obter_usuario_por_id
-import jwt
-from pydantic import BaseModel, EmailStr
-import requests
-import os
-import firebase_admin
-from firebase_admin import credentials
-from fastapi import UploadFile, File, Form
-from typing import Optional
+from fastapi.responses import JSONResponse
 
 
 SECRET_KEY = "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"
@@ -201,7 +202,7 @@ async def obter_perfil(usuario=Depends(get_current_user)):
 
 
 # pegarusuario por nome
-@router.get("/usuarios/{nome_completo}")
+@router.get("/usuarios/nome/{nome_completo}")
 async def obter_usuario_por_nome(nome_completo: str):
     try:
         dados = controller_obter_usuario_por_name(nome_completo)
@@ -212,17 +213,19 @@ async def obter_usuario_por_nome(nome_completo: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# pegar usuairo por nome
+# pegar usuairo por ID
 @router.get("/usuarios/{usuario_id}")
 async def obter_usuario_por_id(usuario_id: int):
     resultado = controller_obter_usuario_por_id(usuario_id)
-    
-    if resultado["status"] == 200:
-        return {"usuario": resultado["usuario"]}
-    elif resultado["status"] == 404:
-        raise HTTPException(status_code=404, detail=resultado["mensagem"])
-    else:
-        raise HTTPException(status_code=500, detail=resultado["mensagem"])
+
+    try:
+        resultado = controller_obter_usuario_por_id(usuario_id)
+        if not resultado:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return {"usuario": resultado}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # # Resetar Senha
 # @router.post("/resetar/senha")

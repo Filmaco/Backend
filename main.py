@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.usuario_router import router as usuario_router
 from routes.video_router import router as video_router
+from routes.playlist_router import router as playlist_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
@@ -15,6 +16,7 @@ app.add_middleware(
 
 app.include_router(usuario_router)
 app.include_router(video_router)
+app.include_router(playlist_router)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 

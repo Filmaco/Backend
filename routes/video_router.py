@@ -16,6 +16,8 @@ from controllers.video_controller import (
 )
 from pydantic import BaseModel
 from typing import Optional
+import os
+from typing import Optional, List, Union
 
 
 router = APIRouter(prefix="/videos", tags=["Videos"])
@@ -49,6 +51,16 @@ def transformar_youtube_para_embed(link: str) -> str:
         video_id = match.group(1)
         return f"https://www.youtube.com/embed/{video_id}"
     return link
+
+# verifica se tem tags
+def processar_tags(tags: Optional[Union[str, List[str]]]) -> Optional[List[str]]:
+    if tags is None:
+        return None
+    if isinstance(tags, list):
+        return tags
+    if isinstance(tags, str):
+        return [tags]
+    return None
 
 
 # ------  CRUD VIDEO --------
@@ -103,16 +115,52 @@ async def criar_video(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# editar video
 @router.put("/editar/{video_id}", status_code=status.HTTP_200_OK)
-async def atualizar_video(video_id: int, video: VideoUpdate):
+async def atualizar_video(
+    video_id: int,
+    nome: str = Form(None),
+    genero: str = Form(None),
+    duracao: str = Form(None),
+    tipo: str = Form(None),
+    link: str = Form(None),
+    descricao: str = Form(None),
+    tags: List[str] = Form([]),
+    imagem: Optional[UploadFile] = File(None)
+):
     try:
-        response = controller_atualizar_video(video_id, video.dict(exclude_unset=True))
+        imagem_nome = None
+        if imagem:
+            os.makedirs("uploads", exist_ok=True)
+            nome_arquivo = imagem.filename
+            caminho = f"uploads/{nome_arquivo}"
+
+            with open(caminho, "wb") as f:
+                f.write(await imagem.read())
+
+            imagem_nome = nome_arquivo
+
+        dados = {
+            "nome": nome,
+            "genero": genero,
+            "duracao": duracao,
+            "tipo": tipo,
+            "link": link,
+            "descricao": descricao,
+            "imagem": imagem_nome,
+            "tags": tags
+        }
+
+        response = controller_atualizar_video(video_id, dados)
+
         if response["status"] != 200:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
+
         return response
+
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        print(f"Erro ao atualizar vídeo: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado: {str(e)}")
+
 
 
 # ----- VISUALIZACAO -----

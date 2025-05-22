@@ -172,15 +172,18 @@ def controller_obter_usuario_por_name(nome_completo):
         return {"status": 500, "mensagem": "Erro ao buscar usuário"}
 
 # pegar usuario por id
-def controller_obter_usuario_por_id(usuario_id: int):
+def controller_obter_usuario_por_id(usuario_id):
     try:
         usuario = model_obter_usuario_por_id(usuario_id)
-        
+        logger.warning(f" Resultado do model: {usuario}")
+
         if usuario:
             return {"status": 200, "mensagem": "Usuário encontrado com sucesso", "usuario": usuario}
         else:
-            logger.warning(f"Usuário '{usuario_id}' não encontrado.")
+            logger.warning(f"Usuário '{usuario}' não encontrado. ------")
             return {"status": 404, "mensagem": "Usuário não encontrado"}
+
     except Exception as e:
         logger.error(f"Erro ao buscar usuário '{usuario_id}': {str(e)}")
         return {"status": 500, "mensagem": "Erro ao buscar usuário"}
+

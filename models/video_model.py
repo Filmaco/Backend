@@ -66,7 +66,8 @@ def model_atualizar_video(
     genero=None,
     duracao=None,
     tipo=None,
-    link=None
+    link=None,
+    imagem=None
 ):
     try:
         conn = get_connection()
@@ -93,6 +94,10 @@ def model_atualizar_video(
         if link:
             campos.append("link = %s")
             valores.append(link)
+            
+        if imagem:
+            campos.append("imagem = %s")
+            valores.append(imagem)
 
         if not campos:
             return False
@@ -268,6 +273,20 @@ def model_adicionar_tags(video_id: int, tags: List[str]):
     finally:
         cursor.close()
         conn.close()
+   
+def model_remover_tags(video_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        query = "DELETE FROM tags_videos WHERE video_id = %s"
+        cursor.execute(query, (video_id,))
+        conn.commit()
+    except Exception as e:
+        print("Erro ao remover tags:", e)
+    finally:
+        cursor.close()
+        conn.close()   
         
 def model_listar_videos_por_tag(nome_tag: Optional[str]):
     try:
