@@ -1,11 +1,13 @@
 from models.usuario_model import (
     model_adicionar_usuario,
     model_editar_usuario,
-    model_inativar_usuario,
+    model_alterar_status_usuario,
     model_obter_usuario_por_name,
     model_listar_usuarios,
     model_obter_usuario_por_email,
     model_obter_usuario_por_id,
+    model_obter_usuario_por_username,
+    model_aterar_tipo_usuario
     )
 from models.utils import gerar_hash  
 from controllers.validacoes import validar_senha
@@ -46,6 +48,12 @@ def controller_criar_usuario(dados):
 
 
     senha_hash = gerar_hash(dados['senha'])
+    
+    if model_obter_usuario_por_username(dados['username']):
+        return {"status": 400, "mensagem": "Nome de usuário já está em uso."}
+    
+    if model_obter_usuario_por_email(dados['email']):
+        return {"status": 400, "mensagem": "Email já está em uso."}
 
     try:
         model_adicionar_usuario(
@@ -64,7 +72,7 @@ def controller_criar_usuario(dados):
         return {"status": 200, "mensagem": "Usuário criado com sucesso"}
     except Exception as e:
         logger.error(f"Erro ao criar usuário: {str(e)}")
-        return {"status": 500, "mensagem": "Erro ao criar usuário."}
+        return {"status": 500, "mensagem": str(e)}
  
  # atualizar usuario   
 
@@ -94,9 +102,9 @@ def controller_atualizar_usuario(usuario_id, dados):
         return {"status": 500, "mensagem": "Erro ao atualizar usuário."}
 
 # inativar usuario
-def controller_inativar_usuario(usuario_id, status):
+def controller_alterar_status_usuario(usuario_id, status):
     try:
-        sucesso = model_inativar_usuario(usuario_id, status)
+        sucesso = model_alterar_status_usuario(usuario_id, status)
         if sucesso:
             logger.info(f"Usuário {usuario_id} inativado com sucesso.")
             return {"status": 200, "mensagem": "Usuário inativado com sucesso"}
@@ -106,7 +114,19 @@ def controller_inativar_usuario(usuario_id, status):
     except Exception as e:
         logger.error(f"Erro ao inativar usuário {usuario_id}: {str(e)}")
         return {"status": 500, "mensagem": "Erro ao inativar usuário."}
-   
+
+# tornar adm
+def controller_aterar_tipo_usuario(admin_id, usuario_id_promovido, tipo):
+    try:
+        sucesso = model_aterar_tipo_usuario(admin_id, usuario_id_promovido, tipo)
+        if sucesso:
+            return {"status": 200, "mensagem": "Tipo de Usuário alterar com sucesso."}
+        else:
+            return {"status": 400, "mensagem": "Erro ao alterar tipo de usuário."}
+    except Exception as e:
+        return {"status": 500, "mensagem": f"Erro no servidor: {str(e)}"}
+
+
 # listar usuarios 
 def controller_listar_usuarios():
     try:

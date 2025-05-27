@@ -12,10 +12,11 @@ from controllers.usuario_controller import (
     controller_criar_usuario,
     controller_listar_usuarios,
     controller_atualizar_usuario,
-    controller_inativar_usuario,
+    controller_alterar_status_usuario,
     controller_login,
     controller_obter_usuario_por_name,
     controller_obter_usuario_por_id,
+    controller_aterar_tipo_usuario,
 )
 from models.usuario_model import model_obter_usuario_por_id
 from fastapi.responses import JSONResponse
@@ -72,7 +73,11 @@ async def criar_usuario(
         }
 
         response = controller_criar_usuario(dados)
-        return response
+
+        if response["status"] != 200:
+            raise HTTPException(status_code=response["status"], detail=response["mensagem"])
+
+        return JSONResponse(status_code=201, content=response)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -125,15 +130,25 @@ async def atualizar_usuario(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# INATIVAR
-@router.put("/usuarios/inativar/{usuario_id}", status_code=status.HTTP_200_OK)
-async def alterar_status_usuario(usuario_id: int, data: dict):
-    status_usuario = data.get("status", "inativo")
+# ALTERAR STATUS
+@router.put("/usuarios/status/{usuario_id}/{status}", status_code=status.HTTP_200_OK)
+async def alterar_status_usuario(usuario_id, status,  data: dict):
+    # status_usuario = data.get("status", "inativo")
     try:
-        response = controller_inativar_usuario(usuario_id, status_usuario)
+        response = controller_alterar_status_usuario(usuario_id, status)
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+# TORNAR ADM
+@router.put("/usuarios/promover/{admin_id}/{usuario_id_promovido}/{tipo}")
+async def aterar_tipo_usuario(admin_id, usuario_id_promovido, tipo):
+    try:
+        resposta = controller_aterar_tipo_usuario(admin_id, usuario_id_promovido, tipo)
+        return resposta
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # LISTARs
 @router.get("/usuarios", status_code=status.HTTP_200_OK)
@@ -149,7 +164,7 @@ async def obter_usuarios():
 async def login(data: dict):
     email = data.get("email")
     senha = data.get("senha")
-    id = data.get("id")  # ID agora é passado pelo corpo da requisição
+    id = data.get("id")  
 
     if not email or not senha:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email e senha são obrigatórios")
