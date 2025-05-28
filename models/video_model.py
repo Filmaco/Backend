@@ -161,7 +161,7 @@ def model_obter_video_por_id(video_id):
                             usuarios u ON v.usuario_id = u.usuario_id
                         WHERE 
                             v.status = 'ativo' 
-                            AND v.video_id = %s -- Aqui você coloca o ID do vídeo
+                            AND v.video_id = %s
                         GROUP BY 
                             v.video_id, u.usuario_id 
                        """, (video_id,))
@@ -340,7 +340,29 @@ def model_listar_videos_por_tag(nome_tag: Optional[str]):
         conn.close()
 
 
+# -------------- TAGS --------------
 
+# pesquisar tag por id
+def model_obter_nome_tag_por_id(id_tag: int):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = "SELECT nome_tag FROM tags_videos WHERE id_tag = %s"
+        cursor.execute(query, (id_tag,))
+        resultado = cursor.fetchone()
+
+        if resultado:
+            return resultado["nome_tag"]
+        return None
+
+    except Exception as e:
+        print(f"Erro ao obter nome da tag pelo ID: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        conn.close()
 
 
 

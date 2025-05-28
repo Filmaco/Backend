@@ -71,7 +71,7 @@ def model_atualizar_playlist(
         return True
 
     except Exception as e:
-        print("Erro ao atualizar vídeo:", e)
+        print("Erro ao atualizar playlist:", e)
         return False
 
     finally:
@@ -202,6 +202,7 @@ def model_listar_videos_da_playlist(playlist_id: int):
             FROM videos v
             INNER JOIN playlist_videos pv ON pv.video_id = v.video_id
             WHERE pv.playlist_id = %s
+             AND v.status = "ativo"
         """
         cursor.execute(sql, (playlist_id,))
         return cursor.fetchall()

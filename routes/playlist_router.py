@@ -54,7 +54,7 @@ async def criar_playlist(
 
 # eidtar playlist
 @router.put("/editar/{playlist_id}")
-async def atualizar_usuario(
+async def atualizar_playlist(
     playlist_id: int,
     titulo: str = Form(None),
     imagem: UploadFile = File(None)

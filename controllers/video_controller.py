@@ -10,7 +10,8 @@ from models.video_model import (
     model_listar_videos_por_tag,
     model_listar_videos_por_genero,
     model_inativar_video,
-    model_remover_tags
+    model_remover_tags,
+    model_obter_nome_tag_por_id
 )
 import logging
 from models.utils import validar_campos_obrigatorios
@@ -151,7 +152,18 @@ def controller_criar_tags(video_id: int, tags_str: str):
         logger.error(f"Erro ao criar tags para o vídeo {video_id}: {str(e)}")
         return {"status": 500, "mensagem": "Erro interno ao adicionar tags"}
 
- 
+# pesquiasar tag por id
+def controller_obter_nome_tag_por_id(id_tag: int):
+    try:
+        nome_tag = model_obter_nome_tag_por_id(id_tag)
+        if nome_tag:
+            return {"status": 200, "data": nome_tag}
+        else:
+            return {"status": 404, "mensagem": "Tag não encontrada"}
+    except Exception as e:
+        logger.error(f"Erro ao buscar tag {id_tag}: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar nome da tag"}
+
  
  # INATIVA VIDEO
 

@@ -13,6 +13,7 @@ from controllers.video_controller import (
     controller_listar_tags,
     controller_listar_videos_por_genero,
     controller_inativar_video,
+    controller_obter_nome_tag_por_id
 )
 from pydantic import BaseModel
 from typing import Optional
@@ -267,7 +268,19 @@ async def inativar_video(video_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-    
+# -------------- TAGS --------------
+
+#pesquisa tag por id
+@router.get("/tag/id/{id_tag}", status_code=status.HTTP_200_OK)
+async def obter_nome_tag_por_id(id_tag: int):
+    try:
+        response = controller_obter_nome_tag_por_id(id_tag)
+        if response["status"] != 200:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=response["mensagem"])
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
     
     
     

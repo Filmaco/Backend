@@ -40,18 +40,22 @@ def controller_criar_playlist(dados: dict):
 
 # edita playlist
 def controller_atualizar_playlist(playlist_id: int, dados: dict):
-
     try:
-        model_atualizar_playlist(
+        playlist_atualizada = model_atualizar_playlist(
             playlist_id=playlist_id,
-            tiutlo=dados.get("tiutlo"),
+            titulo=dados.get("titulo"),
             imagem=dados.get("imagem"),
         )
-        logger.info(f"Usuário {playlist_id} atualizado com sucesso.")
-        return {"status": 200, "mensagem": "Usuário atualizado com sucesso"}
+
+        if not playlist_atualizada:
+            return {"status": 500, "mensagem": "Erro ao atualizar playlist no banco de dados"}
+
+        return {"status": 200, "mensagem": "Playlist atualizada com sucesso", "id": playlist_id}
+
     except Exception as e:
-        logger.error(f"Erro ao atualizar usuário: {str(e)}")
-        return {"status": 500, "mensagem": "Erro ao atualizar usuário."}
+        logger.error(f"Erro ao atualizar playlist: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao atualizar playlist"}
+
   
 # ------ INATIVA VIDEO------
 def controller_inativar_playlist(playlist_id, status):
