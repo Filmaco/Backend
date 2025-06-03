@@ -4,8 +4,6 @@ import jwt
 from pydantic import BaseModel, EmailStr
 import requests
 import os
-import firebase_admin
-from firebase_admin import credentials
 from fastapi import UploadFile, File, Form
 from typing import Optional
 from controllers.usuario_controller import (

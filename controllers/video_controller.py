@@ -195,7 +195,17 @@ def controller_inativar_video(video_id: int):
         logger.error(f"Erro ao inativar vídeo {video_id}: {str(e)}")
         return {"status": 500, "mensagem": "Erro interno ao inativar vídeo"}
  
-
+# def controller_inativar_video(video_id, status):
+#     try:
+#         sucesso = model_inativar_video(video_id, status)
+#         if sucesso:
+#             return {"status": 200, "mensagem": "Vídeo inativado com sucesso"}
+#         else:
+#             return {"status": 400, "mensagem": "Não foi possível inativar o vídeo"}
+#     except Exception as e:
+#         logger.error(f"Erro ao inativar vídeo {video_id}: {str(e)}")
+#         return {"status": 500, "mensagem": "Erro interno ao inativar vídeo"}
+ 
  
 # ----------------- LISTAR -----------
 
@@ -216,6 +226,7 @@ def controller_listar_videos():
             JOIN usuarios u ON v.usuario_id = u.usuario_id
             WHERE v.status = 'ativo'
             GROUP BY v.video_id
+            ORDER BY v.criado_em DESC
         """)
         videos = cursor.fetchall()
 

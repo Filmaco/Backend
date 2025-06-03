@@ -257,7 +257,7 @@ async def obter_video(video_id: int):
 # ----- INATIVAR -----
 
 # inativar
-@router.put("/inativar/{video_id}", status_code=status.HTTP_200_OK)
+@router.put("/status/{video_id}", status_code=status.HTTP_200_OK)
 async def inativar_video(video_id: int):
     try:
         response = controller_inativar_video(video_id)
@@ -266,6 +266,16 @@ async def inativar_video(video_id: int):
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+# @router.put("/status/{video_id}/{status}", status_code=status.HTTP_200_OK)
+# async def inativar_video(video_id, status):
+#     try:
+#         response = controller_inativar_video(video_id, status)
+#         if response["status"] != 200:
+#             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
+#         return response
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 # -------------- TAGS --------------

@@ -122,13 +122,14 @@ def model_atualizar_video(
         cursor.close()
         conn.close()
         
+# inativar video
 def model_inativar_video(video_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
         sql = """
-            "UPDATE videos SET status = %s WHERE video_id = %s"
+            UPDATE videos SET status = 'inativo' WHERE video_id = %s
         """
         cursor.execute(sql, (video_id,))
         conn.commit()
@@ -141,6 +142,26 @@ def model_inativar_video(video_id):
     finally:
         cursor.close()
         conn.close()
+        
+# def model_inativar_video(video_id, status):
+#     try:
+#         conn = get_connection()
+#         cursor = conn.cursor()
+
+#         sql = """
+#             "UPDATE videos SET status = %s WHERE video_id = %s"
+#         """
+#         cursor.execute(sql, (status, video_id,))
+#         conn.commit()
+#         return True
+
+#     except Exception as e:
+#         print(f"Erro ao inativar vídeo: {e}")
+#         return False
+
+#     finally:
+#         cursor.close()
+#         conn.close()
         
 def model_obter_video_por_id(video_id):
     try:
@@ -180,7 +201,7 @@ def model_listar_videos_por_usuario(usuario_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM videos WHERE usuario_id = %s", (usuario_id,))
+        cursor.execute("SELECT * FROM videos WHERE usuario_id = %s ", (usuario_id,))
         return cursor.fetchall()
 
     except Exception as e:
@@ -214,7 +235,7 @@ def model_listar_videos_por_tipo(tipo):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        sql = "SELECT * FROM videos WHERE tipo = %s"
+        sql = "SELECT * FROM videos WHERE tipo = %s ORDER BY v.criado_em DESC"
         cursor.execute(sql, (tipo,))
         return cursor.fetchall()
 
@@ -242,6 +263,7 @@ def model_listar_videos_por_genero(genero):
                 LEFT JOIN tags_videos t ON v.video_id = t.video_id
                 WHERE v.genero = %s AND v.status = 'ativo'
                 GROUP BY v.video_id
+                ORDER BY v.criado_em DESC
             """
         cursor.execute(sql, (genero,))
         return cursor.fetchall()
@@ -305,6 +327,7 @@ def model_listar_videos_por_tag(nome_tag: Optional[str]):
                 JOIN usuarios u ON v.usuario_id = u.usuario_id
                 WHERE t.nome_tag = %s AND v.status = 'ativo'
                 GROUP BY v.video_id
+                ORDER BY v.criado_em DESC
             """
             cursor.execute(query, (nome_tag,))
         else:

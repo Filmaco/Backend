@@ -8,7 +8,8 @@ from controllers.playlist_controller import (
     controller_atualizar_playlist,
     controller_listar_playlist,
     controller_obter_playlist_por_id,
-    controller_inativar_playlist
+    controller_inativar_playlist,
+    controller_remover_video_da_playlist,
 )
 
 router = APIRouter(prefix="/playlists", tags=["Playlists"])
@@ -173,3 +174,19 @@ async def listar_videos_da_playlist(playlist_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado: {str(e)}")
 
+# remover video da da playlis
+@router.delete("/video/remover", status_code=status.HTTP_200_OK)
+async def remover_video_da_playlist(
+    playlist_id: int,
+    video_id: int
+):
+    try:
+        response = controller_remover_video_da_playlist(playlist_id, video_id)
+
+        if response["status"] != 200:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
+
+        return response
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

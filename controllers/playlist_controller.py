@@ -8,6 +8,7 @@ from models.playlist_model import (
     model_listar_playlist,
     model_obter_playlist_por_id,
     model_inativar_playlist,
+    model_remover_video_da_playlist,
     )
 from models.utils import validar_campos_obrigatorios
 import os
@@ -129,3 +130,17 @@ def controller_listar_playlist():
         return {"status": 200, "data": playlists}
     except Exception as e:
         return {"status": 500, "mensagem": "Erro ao listar vídeos da playlist", "detalhes": str(e)}
+
+
+# remover
+def controller_remover_video_da_playlist(playlist_id: int, video_id: int):
+    try:
+        sucesso = model_remover_video_da_playlist(playlist_id, video_id)
+
+        if sucesso:
+            return {"status": 200, "mensagem": "Vídeo removido da playlist com sucesso"}
+        else:
+            return {"status": 404, "mensagem": "Vídeo não encontrado na playlist"}
+
+    except Exception as e:
+        return {"status": 500, "mensagem": "Erro ao remover vídeo da playlist", "detalhes": str(e)}

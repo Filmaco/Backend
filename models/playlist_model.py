@@ -213,4 +213,23 @@ def model_listar_videos_da_playlist(playlist_id: int):
         cursor.close()
         conn.close()
         
+# remover video da playlist
+def model_remover_video_da_playlist(playlist_id: int, video_id: int):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
+        sql = """
+            DELETE FROM playlist_videos
+            WHERE playlist_id = %s AND video_id = %s
+        """
+        cursor.execute(sql, (playlist_id, video_id))
+        conn.commit()
+        return cursor.rowcount > 0 
+
+    except Exception as e:
+        print("Erro ao remover vídeo da playlist:", e)
+        return False
+    finally:
+        cursor.close()
+        conn.close()
