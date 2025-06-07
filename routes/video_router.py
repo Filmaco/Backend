@@ -1,4 +1,3 @@
-# routers/video_router.py
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from controllers.video_controller import (
     controller_criar_video,
@@ -13,7 +12,9 @@ from controllers.video_controller import (
     controller_listar_tags,
     controller_listar_videos_por_genero,
     controller_inativar_video,
-    controller_obter_nome_tag_por_id
+    controller_obter_nome_tag_por_id,
+    controller_listar_videos,
+    controller_listar_videos_ativos_por_usuario
 )
 from pydantic import BaseModel
 from typing import Optional
@@ -206,6 +207,15 @@ async def listar_tags():
 async def listar_videos_usuario(usuario_id: int):
     try:
         response = controller_listar_videos_por_usuario(usuario_id)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+# listar videos ativos por usuario
+@router.get("/usuario/ativos/{usuario_id}", status_code=status.HTTP_200_OK)
+async def listar_videos_ativos_usuario(usuario_id: int):
+    try:
+        response = controller_listar_videos_ativos_por_usuario(usuario_id)
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

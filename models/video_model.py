@@ -22,6 +22,7 @@ class TagCreate(BaseModel):
     video_id: int
     nome_tag: str
 
+# add video
 def model_adicionar_video(
     usuario_id,
     nome,
@@ -59,6 +60,9 @@ def model_adicionar_video(
         cursor.close()
         conn.close()
 
+
+
+# atualizar video
 def model_atualizar_video(
     video_id,
     nome=None,
@@ -202,6 +206,23 @@ def model_listar_videos_por_usuario(usuario_id):
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute("SELECT * FROM videos WHERE usuario_id = %s ", (usuario_id,))
+        return cursor.fetchall()
+
+    except Exception as e:
+        print(f"Erro ao listar vídeos do usuário: {e}")
+        return []
+
+    finally:
+        cursor.close()
+        conn.close()
+  
+# listar videos por usuairo apenas ativos      
+def model_listar_videos_ativos_por_usuario(usuario_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM videos WHERE usuario_id = %s AND status = 'ativo'", (usuario_id,))
         return cursor.fetchall()
 
     except Exception as e:

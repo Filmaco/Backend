@@ -11,7 +11,8 @@ from models.video_model import (
     model_listar_videos_por_genero,
     model_inativar_video,
     model_remover_tags,
-    model_obter_nome_tag_por_id
+    model_obter_nome_tag_por_id,
+    model_listar_videos_ativos_por_usuario
 )
 import logging
 from models.utils import validar_campos_obrigatorios
@@ -262,6 +263,15 @@ def controller_listar_videos_por_genero(genero):
 def controller_listar_videos_por_usuario(usuario_id):
     try:
         videos = model_listar_videos_por_usuario(usuario_id)
+        return {"status": 200, "data": videos}
+    except Exception as e:
+        logger.error(f"Erro ao listar vídeos do usuário {usuario_id}: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao listar vídeos"}
+    
+# listar videos ativos por usuario
+def controller_listar_videos_ativos_por_usuario(usuario_id):
+    try:
+        videos = model_listar_videos_ativos_por_usuario(usuario_id)
         return {"status": 200, "data": videos}
     except Exception as e:
         logger.error(f"Erro ao listar vídeos do usuário {usuario_id}: {str(e)}")

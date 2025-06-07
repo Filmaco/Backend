@@ -117,6 +117,7 @@ def model_inativar_playlist(playlist_id, status):
     finally:
         cursor.close()
         conn.close()
+        
 # lista playlist por usuario
 def model_listar_playlists_por_usuario(usuario_id: int):
     try:

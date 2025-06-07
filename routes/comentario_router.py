@@ -42,7 +42,6 @@ async def listar_comentarios(video_id: int):
     return JSONResponse(status_code=200, content=jsonable_encoder(comentarios))
 
 # excluir
-
 @router.delete("/excluir/{comentario_id}/{usuario_id}")
 async def excluir_comentario(comentario_id: int, usuario_id: int):
     response = controller_excluir_comentario(comentario_id, usuario_id)
