@@ -8,6 +8,7 @@ from routes.seguir_usuarios_router import router as seguir_router
 from routes.avaliacao_router import router as avaliacao_router
 from routes.estatisticas_router import router as estatisticas_router
 from routes.avaliacao_router import router as avaliacao_router
+from routes.busca_avancada_router import router as busca_avancada_router
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
@@ -27,6 +28,7 @@ app.include_router(seguir_router)
 app.include_router(avaliacao_router)
 app.include_router(estatisticas_router)
 app.include_router(avaliacao_router)
+app.include_router(busca_avancada_router)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 

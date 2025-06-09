@@ -11,7 +11,9 @@ from models.avaliacao_model import (
    model_adicionar_avaliacao,
    model_excluir_avaliacao,
    model_listar_avaliacaos_por_video,
-   model_atualizar_avaliacao
+   model_atualizar_avaliacao,
+   model_buscar_ultima_avaliacao_usuario,
+   model_listar_ultimas_avaliacoes_por_video,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,16 +82,48 @@ def controller_excluir_avaliacao(avaliacao_id: int):
 # eidtar
 def controller_atualizar_avaliacao(avaliacao_id: int, dados: dict):
     try:
-        avaliacao_atualizada = model_atualizar_avaliacao(
+        sucesso = model_atualizar_avaliacao(
             avaliacao_id=avaliacao_id,
             avaliacao=dados.get("avaliacao"),
         )
 
-        if not avaliacao_atualizada:
-            return {"status": 500, "mensagem": "Erro ao atualizar avaliacao no banco de dados"}
+        if not sucesso:
+            return {
+                "status": 500,
+                "mensagem": "Erro ao atualizar avaliação no banco de dados"
+            }
 
-        return {"status": 200, "mensagem": "avaliacao atualizada com sucesso", "id": avaliacao_id}
+        return {
+            "status": 200,
+            "mensagem": "Avaliação atualizada com sucesso",
+            "id": avaliacao_id
+        }
 
     except Exception as e:
         logger.error(f"Erro ao atualizar avaliacao: {str(e)}")
-        return {"status": 500, "mensagem": "Erro ao atualizar avaliacao"}
+        return {
+            "status": 500,
+            "mensagem": "Erro inesperado ao atualizar avaliação"
+        }
+
+    
+# ultima avalaicao por usuario
+def controller_ultima_avaliacao_usuario(usuario_id: int, video_id: int):
+    try:
+        resultado = model_buscar_ultima_avaliacao_usuario(usuario_id, video_id)
+        if resultado:
+            return {"status": 200, "dados": resultado}
+        else:
+            return {"status": 404, "mensagem": "Avaliação não encontrada para este usuário e vídeo."}
+    except Exception as e:
+        logger.error(f"Erro ao buscar última avaliação do usuário: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar avaliação"}
+
+# ultimas avaliacoes de todos os usuairos por video
+def controller_ultimas_avaliacoes_por_video(video_id: int):
+    try:
+        resultado = model_listar_ultimas_avaliacoes_por_video(video_id)
+        return {"status": 200, "dados": resultado}
+    except Exception as e:
+        logger.error(f"Erro ao buscar últimas avaliações do vídeo: {str(e)}")
+        return {"status": 500, "mensagem": "Erro ao buscar avaliações"}
