@@ -73,18 +73,6 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-
-## Documentação automática
-
-Swagger UI
-```bash
-http://localhost:8000/docs 
-```
-ReDoc
-```bash
-http://localhost:8000/redoc
-```
-
 #  Manual da API - Projeto FastAPI
 
 Este projeto é uma API desenvolvida com **FastAPI 0.1.0** (OpenAPI 3.1), focada na gestão de usuários, vídeos, playlists e interações sociais. Abaixo estão listados os principais endpoints organizados por funcionalidade.
