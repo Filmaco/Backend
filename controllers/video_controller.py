@@ -96,8 +96,6 @@ def controller_atualizar_video(video_id: int, dados: dict):
 
     return {"status": 200, "mensagem": "Vídeo atualizado com sucesso", "id": video_id}
 
-
-
 # pegar video por id
 def controller_obter_video_por_id(video_id):
     try:
@@ -185,9 +183,9 @@ def controller_atualizar_tags(video_id: int, tags: Optional[Union[str, List[str]
 
 
 # ------ INATIVA VIDEO------
-def controller_inativar_video(video_id: int):
+def controller_inativar_video(video_id: int, status):
     try:
-        sucesso = model_inativar_video(video_id)
+        sucesso = model_inativar_video(video_id, status)
         if sucesso:
             return {"status": 200, "mensagem": "Vídeo inativado com sucesso"}
         else:

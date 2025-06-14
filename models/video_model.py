@@ -22,6 +22,8 @@ class TagCreate(BaseModel):
     video_id: int
     nome_tag: str
 
+# ------------ CRUD --------------------
+
 # add video
 def model_adicionar_video(
     usuario_id,
@@ -59,7 +61,6 @@ def model_adicionar_video(
     finally:
         cursor.close()
         conn.close()
-
 
 
 # atualizar video
@@ -127,15 +128,15 @@ def model_atualizar_video(
         conn.close()
         
 # inativar video
-def model_inativar_video(video_id):
+def model_inativar_video(video_id,status):
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
         sql = """
-            UPDATE videos SET status = 'inativo' WHERE video_id = %s
+            UPDATE videos SET status = %s WHERE video_id = %s
         """
-        cursor.execute(sql, (video_id,))
+        cursor.execute(sql, (status, video_id,))
         conn.commit()
         return True
 
@@ -200,6 +201,10 @@ def model_obter_video_por_id(video_id):
         cursor.close()
         conn.close()
 
+
+# ------------ LISTAGEM ------------
+
+# listar por usuairo
 def model_listar_videos_por_usuario(usuario_id):
     try:
         conn = get_connection()
@@ -233,6 +238,7 @@ def model_listar_videos_ativos_por_usuario(usuario_id):
         cursor.close()
         conn.close()
 
+# criar vizualizacoes
 def model_incrementar_visualizacoes(video_id):
     try:
         conn = get_connection()
@@ -251,6 +257,7 @@ def model_incrementar_visualizacoes(video_id):
         cursor.close()
         conn.close()
 
+# listar por tipo
 def model_listar_videos_por_tipo(tipo):
     try:
         conn = get_connection()

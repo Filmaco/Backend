@@ -163,8 +163,6 @@ async def atualizar_video(
         print(f"Erro ao atualizar vídeo: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado: {str(e)}")
 
-
-
 # ----- VISUALIZACAO -----
 
 #visualizacao
@@ -267,10 +265,10 @@ async def obter_video(video_id: int):
 # ----- INATIVAR -----
 
 # inativar
-@router.put("/status/{video_id}", status_code=status.HTTP_200_OK)
-async def inativar_video(video_id: int):
+@router.put("/status/{video_id}/{status}", status_code=status.HTTP_200_OK)
+async def inativar_video(video_id: int, status):
     try:
-        response = controller_inativar_video(video_id)
+        response = controller_inativar_video(video_id, status)
         if response["status"] != 200:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=response["mensagem"])
         return response

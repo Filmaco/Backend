@@ -49,8 +49,6 @@ def model_adicionar_usuario(
         cursor.close()
         conn.close()
 
-
-  
 # editar usuario     
 def model_editar_usuario(
     usuario_id,
@@ -116,7 +114,6 @@ def model_editar_usuario(
     finally:
         cursor.close()
         conn.close()
-
 
 # listar usuarios
 def model_listar_usuarios():
