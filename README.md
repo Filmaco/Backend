@@ -1,6 +1,6 @@
 #  Filmaço - Plataforma de Vídeos em FastAPI
 
-Projeto desenvolvido em **Python 3.11** com **FastAPI**, oferecendo uma plataforma colaborativa de compartilhamento e visualização de vídeos nacionais.
+Projeto desenvolvido em **Python 3.8.10** com **FastAPI**, oferecendo uma plataforma colaborativa de compartilhamento e visualização de vídeos nacionais.
 
 ---
 
@@ -27,13 +27,8 @@ Lara Victoria Souza Pereira – GitHub
 - **Python 3.8.10**
 - **FastAPI 0.110**
 - **Uvicorn** (servidor ASGI)
-- **SQLAlchemy** (ORM)
-- **Pydantic**
-- **SQLite / PostgreSQL**
+- **MySQL**
 - **JWT** para autenticação
-- **Alembic** (migrações)
-- **Email e Websockets** para notificações
-
 ---
 
 ##  Requisitos de Instalação
