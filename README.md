@@ -1,4 +1,4 @@
-#  Filmaço - Plataforma de Vídeos em FastAPI
+#   FILMAÇO: Uma plataforma web com um acervo audiovisual colaborativo para conteúdo nacional em FastAPI
 
 Projeto desenvolvido em **Python 3.8.10** com **FastAPI**, oferecendo uma plataforma colaborativa de compartilhamento e visualização de vídeos nacionais.
 
@@ -55,8 +55,8 @@ Lara Victoria Souza Pereira – GitHub
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/filmaço.git
-cd filmaço
+git clone https://github.com/Filmaco/Backend.git
+cd back
 
 # Crie e ative o ambiente virtual
 python -m venv venv
@@ -174,8 +174,9 @@ Este projeto é uma API desenvolvida com **FastAPI 0.1.0** (OpenAPI 3.1), focada
 
 ---
 
- **Atualizado em:** 14 de junho de 2025  
+ **Atualizado em:** 16 de junho de 2025  
  **Base da API:** `http://localhost:8000`  
  **Documentação Swagger:** [`/docs`](http://localhost:8000/docs)  
  **Documentação Redoc:** [`/redoc`](http://localhost:8000/redoc)
+ **[Interface em VueJS (frontend da aplicação)](https://github.com/Filmaco/Frontend))
 
