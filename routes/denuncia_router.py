@@ -5,8 +5,12 @@ from controllers.denuncia_controller import (
     controller_denunciar_conteudo,
     controller_listar_denuncias,
     controller_atualizar_status_denuncia,
-    controller_remover_conteudo_denunciado
+    controller_remover_conteudo_denunciado,
+    controller_alterar_status_video,
+    controller_obter_denuncia_por_id
 )
+from models.denuncia_model import model_obter_denuncia_por_id
+
 
 router = APIRouter(prefix="/denuncias", tags=["Denúncias"])
 
@@ -46,7 +50,6 @@ async def atualizar_status_denuncia(
 # exclui de vez o video
 @router.delete("/{denuncia_id}/remover-conteudo", status_code=status.HTTP_200_OK)
 async def remover_conteudo_denunciado(denuncia_id: int):
-    from models.denuncia_model import model_obter_denuncia_por_id
     denuncia = model_obter_denuncia_por_id(denuncia_id)
 
     if not denuncia:
@@ -60,9 +63,16 @@ async def remover_conteudo_denunciado(denuncia_id: int):
 # pega a denuncia pleo id
 @router.get("/{denuncia_id}", status_code=status.HTTP_200_OK)
 async def obter_denuncia_por_id(denuncia_id: int):
-    from controllers.denuncia_controller import controller_obter_denuncia_por_id
 
     response = controller_obter_denuncia_por_id(denuncia_id)
+    if response["status"] != 200:
+        raise HTTPException(status_code=response["status"], detail=response["mensagem"])
+    return response
+
+@router.put("/alterar-status/{video_id}/{status}", status_code=status.HTTP_200_OK)
+async def alterar_status(video_id: int, status):
+
+    response = controller_alterar_status_video(video_id, status)
     if response["status"] != 200:
         raise HTTPException(status_code=response["status"], detail=response["mensagem"])
     return response

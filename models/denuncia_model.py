@@ -3,7 +3,7 @@ import logging
 
 # usuario faz a denuncia
 # id_usuario, id_video
-def model_denunciar_conteudo(usuario_id, motivo, video_id=None):
+def model_denunciar_conteudo(usuario_id, motivo, video_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -12,6 +12,12 @@ def model_denunciar_conteudo(usuario_id, motivo, video_id=None):
             INSERT INTO denuncias (usuario_id, motivo, video_id)
             VALUES (%s, %s, %s)
         """, (usuario_id, motivo, video_id))
+        
+        cursor.execute("""
+            UPDATE videos
+            SET status = 'investigando'
+            WHERE video_id = %s
+        """, (video_id,))
 
         conn.commit()
         return {"mensagem": "Denúncia registrada com sucesso."}
@@ -41,7 +47,8 @@ def model_listar_denuncias():
                 d.status, 
                 d.video_id, 
                 d.criado_em,
-                v.nome AS titulo_video
+                v.nome AS titulo_video,
+                v.status AS status_video
             FROM denuncias d
             JOIN usuarios u ON d.usuario_id = u.usuario_id
             LEFT JOIN videos v ON d.video_id = v.video_id
@@ -114,10 +121,55 @@ def model_obter_denuncia_por_id(denuncia_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM denuncias WHERE denuncia_id = %s", (denuncia_id,))
+        cursor.execute(""" 
+                       SELECT 
+                            d.denuncia_id, 
+                            d.usuario_id, 
+                            u.nome_completo, 
+                            d.motivo, 
+                            d.status, 
+                            d.video_id, 
+                            d.criado_em,
+                            v.link,  
+                            v.status AS status_video,   
+                            v.nome AS titulo_video
+                        FROM denuncias d
+                        JOIN usuarios u ON d.usuario_id = u.usuario_id
+                        LEFT JOIN videos v ON d.video_id = v.video_id
+                        WHERE d.denuncia_id = %s
+                        ORDER BY d.criado_em DESC;
+                       """, (denuncia_id,))
         return cursor.fetchone()
     except Exception as e:
         raise Exception(f"Erro ao buscar denúncia por ID: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+
+def model_alterar_status_video(video_id, status):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(""" 
+            UPDATE videos
+            SET status = %s
+            WHERE video_id = %s
+        """, (status, video_id))
+
+        cursor.execute("""
+            UPDATE denuncias
+            SET status = 'resolvido'
+            WHERE video_id = %s
+        """, (video_id,))
+
+        conn.commit()
+        return {"mensagem": "Status do vídeo e da denúncia atualizados com sucesso."}
+    
+    except Exception as e:
+        conn.rollback()
+        raise Exception(f"Erro ao alterar status do vídeo e denúncia: {str(e)}")
+    
     finally:
         cursor.close()
         conn.close()
