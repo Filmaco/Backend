@@ -12,7 +12,8 @@ from models.video_model import (
     model_inativar_video,
     model_remover_tags,
     model_obter_nome_tag_por_id,
-    model_listar_videos_ativos_por_usuario
+    model_listar_videos_ativos_por_usuario,
+
 )
 import logging
 from models.utils import validar_campos_obrigatorios

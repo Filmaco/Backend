@@ -7,6 +7,7 @@ from models.denuncia_model import (
     model_remover_video,
     model_remover_comentario,
     model_obter_denuncia_por_id,
+    model_alterar_status_video,
 )
 from models.utils import validar_campos_obrigatorios
 
@@ -140,4 +141,27 @@ def controller_obter_denuncia_por_id(denuncia_id: int):
         return {
             "status": 500,
             "mensagem": "Erro interno ao buscar denúncia"
+        }
+
+def controller_alterar_status_video(video_id, status):
+    try:
+        video = model_alterar_status_video(video_id, status)
+
+        if video:
+            return {
+                "status": 200,
+                "mensagem": "Status Video alterado com sucesso",
+                "video": video
+            }
+        else:
+            return {
+                "status": 404,
+                "mensagem": "Status nao alterado"
+            }
+
+    except Exception as e:
+        logger.error(f"Erro ao obter video por ID {video_id}: {str(e)}")
+        return {
+            "status": 500,
+            "mensagem": "Erro interno ao buscar video"
         }
