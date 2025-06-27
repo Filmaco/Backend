@@ -13,7 +13,7 @@ def model_adicionar_usuario(
     foto_perfil=None,
     genero=None,
     biografia=None,
-    tipo='comum',
+    tipo=None,
     status='ativo',
 ):
     try:

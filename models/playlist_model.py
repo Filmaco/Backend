@@ -84,7 +84,7 @@ def model_listar_playlist():
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("SELECT * FROM playlists")
+        cursor.execute("SELECT * FROM playlists WHERE status = 'ativo'")
         playlists = cursor.fetchall()
 
         return playlists

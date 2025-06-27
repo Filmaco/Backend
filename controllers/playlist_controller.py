@@ -9,6 +9,7 @@ from models.playlist_model import (
     model_obter_playlist_por_id,
     model_inativar_playlist,
     model_remover_video_da_playlist,
+    # model_listar_playlist_usuario
     )
 from models.utils import validar_campos_obrigatorios
 import os
